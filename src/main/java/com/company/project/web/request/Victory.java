@@ -1,0 +1,18 @@
+package com.company.project.web.request;
+
+import com.company.project.dto.Contributor;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.List;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+public class Victory {
+    Integer winnerId;
+    List<Contributor> achievement;
+}

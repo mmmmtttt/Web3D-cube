@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.company.project.dao.RecordMapper">
+<!--    <resultMap id="BaseResultMap" type="com.company.project.model.Record">-->
+<!--        &lt;!&ndash;-->
+<!--          WARNING - @mbg.generated-->
+<!--          resultMap reference:https://mybatis.org/mybatis-3/zh/sqlmap-xml.html-->
+<!--          后续用户注册的portrait对象可以考虑使用resultMap中的<association> or <collection>? 属性-->
+<!--        &ndash;&gt;-->
+<!--        <id column="id" jdbcType="INTEGER" property="id" />-->
+<!--        <result column="user_id" jdbcType="INTEGER" property="userId" />-->
+<!--        <result column="room_id" jdbcType="INTEGER" property="roomId" />-->
+<!--        <result column="checkpoint" jdbcType="INTEGER" property="checkpoint" />-->
+<!--        <result column="tag" jdbcType="VARCHAR" property="tag" />-->
+<!--        <result property="trial" jdbcType="INTEGER" column="trial"/>-->
+<!--        <result property="hasSucceeded" jdbcType="VARCHAR" column="has_succeeded"/>-->
+<!--        <result property="deprecate" jdbcType="INTEGER" column="deprecate"/>-->
+<!--    </resultMap>-->
+
+    <resultMap id="BaseResultMap" type="com.company.project.dto.RecordDTO">
+        <result column="room_id" jdbcType="INTEGER" property="roomId" />
+        <result column="checkpoint" jdbcType="INTEGER" property="checkpointId" />
+        <result column="tag" jdbcType="VARCHAR" property="tag" />
+        <result property="trial" jdbcType="INTEGER" column="trial"/>
+        <result property="result" jdbcType="VARCHAR" column="has_succeeded"/>
+    </resultMap>
+
+    <resultMap id="CorrectMap" type="com.company.project.dto.Correct">
+        <result column="tag" jdbcType="VARCHAR" property="tag" />
+        <result column="num" property="num" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <resultMap id="ContributorMap" type="com.company.project.dto.Contributor">
+        <result column="user_id" jdbcType="INTEGER" property="socketId" />
+        <result column="checkpoint" jdbcType="INTEGER" property="checkpoint" />
+    </resultMap>
+
+
+    <select id="getRecords" resultMap="BaseResultMap">
+    select r.room_id,r.checkpoint,r.tag,r.trial,r.has_succeeded from user u inner join record r on u.id=r.user_id
+    where u.username = #{username} order by r.room_id
+  </select>
+
+    <select id="getCorrect" resultMap="CorrectMap">
+        select r.tag,count(*)num from record r inner join user u on u.id=r.user_id WHERE r.has_succeeded='succeeded' and u.username = #{username} GROUP BY r.tag
+    </select>
+
+    <select id="getAllTrial" resultType="Integer">
+        select sum(r.trial)total from record r inner join user u on u.id=r.user_id where u.username = #{username}
+    </select>
+
+    <select id="findRecord" resultType="Boolean">
+    select exists (select r.room_id,r.checkpoint,r.tag,r.trial,r.has_succeeded from user u inner join record r on u.id=r.user_id
+    where u.username = #{username} and r.room_id = #{roomid} and r.checkpoint = #{checkpoint} and r.deprecate = 0)
+  </select>
+
+    <insert id="addRecord" useGeneratedKeys="true" keyProperty="id">
+    insert into record (user_id,room_id,checkpoint,tag,trial,has_succeeded,deprecate)
+    values(#{userId},#{roomId},#{checkpoint},#{tag},#{trial},#{hasSucceeded},#{deprecate})
+  </insert>
+
+    <update id="updateFailure">
+    update record set trial=trial+1 where user_id = #{userId} and room_id = #{roomId} and checkpoint = #{checkpoint} and deprecate = 0
+    </update>
+
+    <update id="updateSuccess">
+    update record set trial=trial+1, has_succeeded='succeeded'
+                  where user_id = #{userId} and room_id = #{roomId} and checkpoint = #{checkpoint} and deprecate = 0 and
+                        has_succeeded = 'failed'
+    </update>
+
+    <select id="getContributors" resultMap="ContributorMap">
+        select user_id, checkpoint from record where deprecate = 0 and room_id = #{roomId} and has_succeeded = 'succeeded'
+    </select>
+
+    <update id="welcomeVictory">
+        update record set deprecate = 1 where room_id = #{roomID} and deprecate = 0
+    </update>
+
+</mapper>
